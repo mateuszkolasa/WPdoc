@@ -6,6 +6,9 @@
  Author: Mateusz Kolasa
  Author URI: http://www.icymat.pl/
  */
+define('WPDOC_PATH', plugin_dir_path( __FILE__ ));
+require WPDOC_PATH . 'model/WPdoc.php';
+WPdoc::init();
 
 /**
  * Create database
@@ -15,13 +18,14 @@
 function wpdoc_install() {
 	global $wpdb;
 	$prefix = $wpdb->prefix;
-	$wpdoc_db_version = "0.1";
+	$wpdoc_db_version = "0.2";
 	
 	//wpdoc_projects
 	if ($wpdb->get_var("SHOW TABLES LIKE '" . $wpdb->prefix . "wpdoc_projects'") != $wpdb->prefix . 'wpdoc_projects') {
 		$wpdb->query("CREATE TABLE " . $wpdb->prefix . "wpdoc_projects (
 	        id int(9) NOT NULL AUTO_INCREMENT,
 	        name varchar(100) NOT NULL,
+	        description varchar(255) NULL,
 	        PRIMARY KEY(id)
         )");
 	}
@@ -70,30 +74,85 @@ function wpdoc_uninstall() {
 * Dodaje Logo carousel do menu w PA
 */
 function wpdoc_plugin_menu() {
-	add_menu_page('WPdoc', 'WPdoc', 'administrator', 'wpdoc_settings', 'wpdoc_display_settings');
-	//add_submenu_page('wpdoc_projects', __('Images'), __('Images'), 'edit_themes', 'wpdoc_projects', 'wpdoc_projects');
-}
-
-function wpdoc_settings() {
-    echo 123;
+	/*add_menu_page('WPdoc', 'WPdoc', 'administrator', 'wpdoc_settings', 'wpdoc_display_settings');
+	add_submenu_page('wpdoc_settings', __('New'), __('New'), 'administrator', 'wpdoc_add', 'wpdoc_display_add');
+	add_submenu_page('wpdoc_settings', __('New'), __('New'), 'administrator', 'wpdoc_project_edit', 'wpdoc_project_edit');
+	remove_menu_page('wpdoc_project_edit');*/
 }
 
 function wpdoc_display_settings() {
-    echo '<div class="wrap"><form action="options.php" method="post" name="options">';
-    echo '<h2>Select Your Settings</h2>';
-    //echo wp_nonce_field('update-options');
-    echo '<table class="form-table" width="100%" cellpadding="10">';
+	$WPdoc = new WPdoc();
+	$list = $WPdoc->listOfProjects();
+	
+    echo '<div class="wrap">';
+    echo '<h1>';
+    echo 'Projekty ';
+    echo '<a class="page-title-action" href="?page=wpdoc_add">Dodaj nowy</a>';
+    echo '</h1>';
+    
+    echo '<table class="wp-list-table widefat" width="100%" cellpadding="10">';
+    echo '<thead>';
     echo '  <tr>';
-    echo '      <th>Projekt</th>';
+    echo '      <th>Project</th>';
+    echo '      <th>Options</th>';
     echo '  </tr>';
-    echo '</table>';
+    echo '</thead>';
+    
+    echo '<tbody>';
+    foreach($list as $project) {
+    	echo '<tr class="inactive">';
+    	echo '	<td><a href="?page=wpdoc_project_edit&project=' . $project['id'] . '">' . $project['name'] . '</a></td>';
+    	echo '	<td>' . $project['description'] . '</td>';
+    	echo '</tr>';
+    }
+    echo '</tbody>';
     
     echo '</table>';
-    echo '<input type="hidden" name="action" value="update'.__('Update').'" />';
-    echo ''; 
-    echo '<input type="hidden" name="page_options" value="rmlc_speed,rmlc_type,rmlc_interval" />';
-    echo ''; 
-    echo '<input type="submit" name="Submit" value="Update" /></form></div>';
+}
+
+function wpdoc_display_add() {
+	if($_SERVER['REQUEST_METHOD'] == 'POST') {
+		$WPdoc = new WPdoc();
+		$teges = $WPdoc->addProject($_POST['name'], $_POST['description']);
+		
+		if($teges === true) {
+			echo '';
+		}
+	}
+	
+	echo '<div class="wrap"><form action="?page=wpdoc_add" method="post">';
+    echo '<h1>';
+    echo '<a href="?page=wpdoc_settings">Projekty</a>';
+    echo ' &raquo; Nowy projekt';
+    echo '</h1>';
+    
+    echo '<table class="form-table" width="100%" cellpadding="10">';
+    echo '  <tr>';
+    echo '      <th>Nazwa</th>';
+    echo '      <td><input type="text" name="name" cols="30"></td>';
+    echo '  </tr>';
+
+    echo '  <tr>';
+    echo '      <th>Opis</th>';
+    echo '      <td><textarea name="description" cols="30" rows="5"></textarea></td>';
+    echo '  </tr>';
+    
+    echo '</table>';
+    
+    echo '<input type="submit" value="Utwórz projekt" class="button button-primary" id="submit" name="submit">';
+}
+
+function wpdoc_project_edit() {
+    $WPdoc = new WPdoc();
+    $WPdoc->get($_GET['project']);
+
+    die();
+
+    echo '<div class="wrap">';
+    echo '<h1>';
+    echo 'Projekt: ' . $project;
+    echo '<a class="page-title-action" href="?page=wpdoc_add">Dodaj nowy</a>';
+    echo '</h1>';
 }
 
 add_action('admin_menu', 'wpdoc_plugin_menu');

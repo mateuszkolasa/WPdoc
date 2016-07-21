@@ -5,43 +5,45 @@
  * @author Mateusz Kolasa <mateusz.kolasa@polcode.net>
  */
 class WPdoc {
- 
-    private $tableName;
-    private $wpdb;
- 
-    public function __construct() {
+
+    public function init() {
+        // Load functions files.
+        require_once(WPDOC_PATH . 'inc/functions-post-types.php' );
+        if ( is_admin() ) {
+        }
+    }
+
+    public function listOfProjects() {
         global $wpdb;
-        /*$prefix = $wpdb->prefix;
-        $this->tableName = $prefix . "rm_logo_carousel";
-        $this->wpdb = $wpdb;*/
+        
+        $data = $wpdb->get_results('SELECT * FROM ' . $wpdb->prefix . 'wpdoc_projects', 'ARRAY_A');
+        
+        return $data; 
     }
- 
-    /*
-     * Pobiera wszystkie obrazki
-     * @global $wpdb $wpdb
-     * @return array Tablica z obrazkami
-     *
-    public function getAll() {
-        $query = "SELECT * FROM  " . $this->tableName . " ORDER BY id DESC;";
-        return $this->wpdb->get_results($query, ARRAY_A);
+
+    public function addProject($name, $description) {
+        global $wpdb;
+
+        if($name == null) {
+            return 'Nazwa projektu nie może być pusta';
+        }
+
+        $wpdb->insert( $wpdb->prefix . 'wpdoc_projects', array(
+            'name' => $name,
+            'description' => $description
+        ), array('%s', '%s'));
+
+        return true;
     }
-    
-    /*
-     * Dodaje obrazki
-     * @global $wpdb $wpdb
-     * @param array $data
-     *
-    public function add($data) {
-        $this->wpdb->insert($this->tableName, $data, array('%s', '%s', '%s'));
+
+    public function getProject($name, $description) {
+        global $wpdb;
+
+        $wpdb->get( $wpdb->prefix . 'wpdoc_projects', array(
+            'name' => $name,
+            'description' => $description
+        ), array('%s', '%s'));
+
+        return true;
     }
- 
-    /**
-     * Usuwa wszystkie obrazki
-     * @global $wpdb $wpdb
-     *
-    public function deleteAll() {
-        $sql = "TRUNCATE TABLE " . $this->tableName;
-        $this->wpdb->query($sql);
-    }
- 	*/
 }
