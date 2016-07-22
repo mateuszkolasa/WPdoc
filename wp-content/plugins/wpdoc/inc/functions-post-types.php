@@ -77,13 +77,12 @@ class WPdoc_widget extends WP_Widget{
         if ( $title ) {
             echo $before_title . $title . $after_title;
         }
-        echo 123;
         $this->getRealtyListings($numberOfListings);
         echo $after_widget;
     }
 
     function getRealtyListings($numberOfListings) { //html
-        global $post;
+        /*global $post;
 
         $listings = new WP_Query();
         $listings->query('post_type=wpdoc_page&posts_per_page=' . $numberOfListings );
@@ -92,17 +91,24 @@ class WPdoc_widget extends WP_Widget{
             while ($listings->have_posts()) {
                 $listings->the_post();
                 $image = (has_post_thumbnail($post->ID)) ? get_the_post_thumbnail($post->ID, 'realty_widget_size') : '<div class="noThumb"></div>';
-                $listItem = '<li>' . $image;
-                $listItem .= '<a href="' . get_permalink() . '">';
-                $listItem .= get_the_title() . '</a>';
-                $listItem .= '<span>Added ' . get_the_date() . '</span></li>';
+                $listItem = '<li>';
+                $listItem .= '<a href="' . get_permalink() . '">' . get_the_title() . '</a>';
+                $listItem .= '</li>';
                 echo $listItem;
             }
             echo '</ul>';
             wp_reset_postdata();
         }else{
             echo '<p style="padding:25px;">No listing found</p>';
-        }
+        }*/
+
+        // We wrap it in unordered list
+        echo '<ul>';
+        echo wp_list_categories(array(
+            taxonomy => 'wpdoc_project',
+            title_li => ''
+        ));
+        echo '</ul>';
     }
 
 
