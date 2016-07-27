@@ -6,8 +6,6 @@
  * Time: 14:06
  */
 
-add_action( 'init', 'wpdoc_register_post_types' );
-
 function wpdoc_register_post_types() {
     register_post_type('wpdoc_page', [
         'labels' => array(
@@ -20,16 +18,12 @@ function wpdoc_register_post_types() {
         'has_archive' => true,
         'rewrite' => array('slug' => 'wpdoc'),
         'show_ui' => true,
-        'supports' => array('title', 'revisions', 'editor', 'thumbnail'),
+        'supports' => array('title', 'revisions', 'editor', 'thumbnail', 'revisions', 'page-attributes'),
         'hierarchical' => true,
         'show_in_nav_menus' => true,
         'menu_icon' => 'dashicons-portfolio'
     ]);
-
-    //register_taxonomy_for_object_type( 'wpdoc_project', 'wpdoc_page' );
-
-
-
+    
     $labels = array(
         'name' => _x( 'Project', 'taxonomy general name' ),
         'singular_name' => _x( 'Project', 'taxonomy singular name' ),
@@ -52,13 +46,12 @@ function wpdoc_register_post_types() {
     ));
 }
 
-
 class WPdoc_widget extends WP_Widget{
     function __construct() {
         parent::__construct(
             'wpdoc_widget', // Base ID
-            'Projects', // Name
-            array('description' => __( 'Opis'))
+            'WPdoc Projects', // Name
+            array('description' => __( 'Display list of WPdoc projects'))
         );
     }
 
@@ -82,38 +75,61 @@ class WPdoc_widget extends WP_Widget{
     }
 
     function getRealtyListings($numberOfListings) { //html
-        /*global $post;
-
-        $listings = new WP_Query();
-        $listings->query('post_type=wpdoc_page&posts_per_page=' . $numberOfListings );
-        if($listings->found_posts > 0) {
-            echo '<ul class="realty_widget">';
-            while ($listings->have_posts()) {
-                $listings->the_post();
-                $image = (has_post_thumbnail($post->ID)) ? get_the_post_thumbnail($post->ID, 'realty_widget_size') : '<div class="noThumb"></div>';
-                $listItem = '<li>';
-                $listItem .= '<a href="' . get_permalink() . '">' . get_the_title() . '</a>';
-                $listItem .= '</li>';
-                echo $listItem;
-            }
-            echo '</ul>';
-            wp_reset_postdata();
-        }else{
-            echo '<p style="padding:25px;">No listing found</p>';
-        }*/
+        global $post;
 
         // We wrap it in unordered list
         echo '<ul>';
-        echo wp_list_categories(array(
-            taxonomy => 'wpdoc_project',
-            title_li => ''
-        ));
+        $taxonomies = get_categories(array('taxonomy' => 'wpdoc_project'), 'objects');
+        if($taxonomies) {
+            foreach($taxonomies as $taxonomy) {
+                echo '<li><a href="/projects/' . $taxonomy->slug . '">' . $taxonomy->name . '</a>';
+                
+                /* Pages */
+                $listings = new WP_Query();
+                $listings->query('post_type=wpdoc_page&post_parent=0&wpdoc_project=' . $taxonomy->slug);
+                if($listings->found_posts > 0) {
+                    echo '<ul class="realty_widget">';
+                    while ($listings->have_posts()) {
+                        $listings->the_post();
+                        $image = (has_post_thumbnail($post->ID)) ? get_the_post_thumbnail($post->ID, 'realty_widget_size') : '<div class="noThumb"></div>';
+                        $listItem = '<li>';
+                        $listItem .= '<a href="' . get_permalink() . '">' . get_the_title() . '</a>';
+                
+                        $args = array(
+                            'numberposts' => 1,
+                            'post_parent' => $post->ID,
+                            'post_status' => null,
+                            'post_type' => 'wpdoc_page',
+                        );
+                
+                        $children = get_children($args);
+                
+                        if($children) {
+                            $listItem .= '<ul>';
+                            foreach($children as $child) {
+                                $listItem .= '<li><a href="' . get_permalink($child) . '" title="' . $child->post_title . '">' . $child->post_title . '</a></li>';
+                            }
+                            $listItem .= '</ul>';
+                        }
+                
+                        $listItem .= '</li>';
+                        echo $listItem;
+                    }
+                    echo '</ul>';
+                    wp_reset_postdata();
+                }
+                /* --- Pages */
+                
+                echo '</li>';
+            }
+        }
         echo '</ul>';
     }
 
 
-} //end class Realty_Widget
+}
 
+add_action( 'init', 'wpdoc_register_post_types' );
 add_action( 'widgets_init', function(){
     register_widget( 'wpdoc_widget' );
 });
